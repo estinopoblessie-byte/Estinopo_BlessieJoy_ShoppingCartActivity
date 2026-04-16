@@ -9,8 +9,13 @@ class Product
 
     public void DisplayProduct()
     {
-        Console.WriteLine(string.Format("  {0,2}. {1,-25} PHP {2,8:F2} | Stock: {3,4}",
+        Console.WriteLine(string.Format("  {0,2}. {1,-25} PHP{2,8:F2} | Stock: {3,4}",
             Id, Name, Price, RemainingStock));
+    }
+
+    public double GetItemTotal(int quantity)
+    {
+        return Price * quantity;
     }
 
     public bool HasEnoughStock(int quantity)
@@ -39,35 +44,38 @@ class Program
             new Product { Id = 7, Name = "Potato Marble", Price = 130.00, RemainingStock = 20 },
             new Product { Id = 8, Name = "Zonrox Cleaner", Price = 150.00, RemainingStock = 30 },
             new Product { Id = 9, Name = "Safeguard Soap", Price = 42.00, RemainingStock = 50 },
-            new Product { Id = 10,Name = "Keratin Plus Gold", Price = 57.00, RemainingStock = 40 }
+            new Product { Id = 10, Name = "Keratin Plus Gold", Price = 57.00, RemainingStock = 40 }
         };
+
+        int[] cartQuantities = new int[10];
+        string choice;
 
         Console.WriteLine("Welcome to the Store!");
         Console.WriteLine();
 
         while (true)
         {
-            // Menu Display
+            // Store Menu
             Console.WriteLine("\n===== STORE MENU =====");
             Console.WriteLine(new string('=', 55));
             Console.WriteLine("ID  Product                    Price     Stock");
             Console.WriteLine(new string('-', 55));
 
-            foreach (var p in products)
+            foreach (var product in products)
             {
-                p.DisplayProduct();
+                product.DisplayProduct();
             }
 
             Console.WriteLine(new string('=', 55));
 
             // Product selection
             Console.Write("\nEnter product number (1-10): ");
-            string input = Console.ReadLine() ?? string.Empty;
+            string input = Console.ReadLine();
 
             if (!int.TryParse(input, out int productNum) ||
                 productNum < 1 || productNum > 10)
             {
-                Console.WriteLine("Invalid input! Please try again.");
+                Console.WriteLine("Invalid product number!");
                 continue;
             }
 
@@ -75,42 +83,101 @@ class Program
 
             if (selectedProduct.RemainingStock == 0)
             {
-                Console.WriteLine("Product is out of stock!");
+                Console.WriteLine("This product is out of stock!");
                 continue;
             }
 
             // Quantity input
             Console.Write("Enter quantity (1-" + selectedProduct.RemainingStock + "): ");
-            string qtyInput = Console.ReadLine() ?? string.Empty;
+            string qtyInput = Console.ReadLine();
 
             if (!int.TryParse(qtyInput, out int qty) || qty <= 0)
             {
-                Console.WriteLine("Invalid quantity! Must be 1 or more.");
+                Console.WriteLine("Invalid quantity!");
                 continue;
             }
 
-            if (qty > selectedProduct.RemainingStock)
+            if (!selectedProduct.HasEnoughStock(qty))
             {
-                Console.WriteLine("Only " + selectedProduct.RemainingStock + " available!");
+                Console.WriteLine("Not enough stock available!");
                 continue;
             }
 
-            // Process sale
+            // Add to cart
+            cartQuantities[productNum - 1] += qty;
             selectedProduct.DeductStock(qty);
-            Console.WriteLine("\n" + qty + "x " + selectedProduct.Name + " sold!");
-            Console.WriteLine("New stock: " + selectedProduct.RemainingStock);
+
+            Console.WriteLine("Added to cart!");
             Console.WriteLine();
 
-            // Continue prompt
-            Console.Write("Continue shopping? (YES/NO): ");
-            string choice = Console.ReadLine() ?? string.Empty;
-            if (choice.Trim().ToUpper() != "YES")
+            // Continue shopping?
+            Console.Write("Add more items? (YES/NO): ");
+            choice = Console.ReadLine().Trim().ToUpper();
+            if (choice != "YES")
             {
                 break;
             }
         }
 
+        // Receipt
+        Console.WriteLine("\n===== RECEIPT =====");
+        Console.WriteLine(new string('=', 55));
+
+        double grandTotal = 0;
+        bool hasItems = false;
+
+        for (int i = 0; i < products.Length; i++)
+        {
+            if (cartQuantities[i] > 0)
+            {
+                double subtotal = products[i].GetItemTotal(cartQuantities[i]);
+                grandTotal += subtotal;
+                hasItems = true;
+
+                Console.WriteLine(string.Format("{0,-28} x{1,2} = PHP{2,8:F2}",
+                    products[i].Name, cartQuantities[i], subtotal));
+            }
+        }
+
+        if (!hasItems)
+        {
+            Console.WriteLine("No items in cart.");
+        }
+        else
+        {
+            Console.WriteLine(new string('-', 55));
+            Console.WriteLine("Grand Total: PHP" + grandTotal.ToString("F2"));
+
+            // Discount
+            double discount = 0;
+            if (grandTotal >= 5000)
+            {
+                discount = grandTotal * 0.10;
+                Console.WriteLine("Discount (10%): -PHP" + discount.ToString("F2"));
+            }
+
+            double finalTotal = grandTotal - discount;
+            Console.WriteLine(new string('=', 55));
+            Console.WriteLine("Final Total: PHP" + finalTotal.ToString("F2"));
+            Console.WriteLine(new string('=', 55));
+        }
+
+        // Updated Stock
+        Console.WriteLine("\n===== UPDATED STOCK =====");
+        Console.WriteLine(new string('=', 55));
+        Console.WriteLine("ID  Product Price Stock");
+        Console.WriteLine(new string('-', 55));
+
+        foreach (var product in products)
+        {
+            product.DisplayProduct();
+        }
+
+        Console.WriteLine(new string('=', 55));
+
         Console.WriteLine("\nThank you for shopping!");
         Console.ReadKey();
     }
 }
+
+// FINALLY DONEE NAAA!! 
